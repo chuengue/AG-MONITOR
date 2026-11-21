@@ -1,10 +1,22 @@
 import type { Executive, MonitorLists } from '../api';
-import { kg, money, moneyShort, monthLabel } from '../format';
-import { Kpi, Section } from './ui';
+import { date, kg, money, moneyShort, monthLabel } from '../format';
+import type { DetailRef } from './DetailSheet';
+import { Kpi, Row, Section } from './ui';
 
 type Tab = 'resumo' | 'pedidos' | 'vendas' | 'cotacoes';
 
-export function Summary({ data, lists, onOpen }: { data: Executive; lists: MonitorLists; onOpen: (t: Tab) => void }) {
+export function Summary({
+  data,
+  lists,
+  onOpen,
+  onDetail,
+}: {
+  data: Executive;
+  lists: MonitorLists;
+  onOpen: (t: Tab) => void;
+  onDetail: (t: DetailRef) => void;
+}) {
+  const rec = data.receivables;
   const { current, previous, openQuotations } = data.revenue;
   const p = data.production;
   const inProduction = p.byStatus.find((s) => s.status === 'em_producao')?.count ?? 0;
@@ -59,6 +71,50 @@ export function Summary({ data, lists, onOpen }: { data: Executive; lists: Monit
         />
         <Kpi label="Entregues" value={String(p.delivered)} current={p.delivered} previous={p.previousDelivered} />
       </div>
+
+      {rec && (
+        <>
+          <div className="kpi-grid">
+            <Kpi
+              label="A receber"
+              value={money(rec.open.amount)}
+              hint={`${rec.open.count} parcelas · ${money(rec.dueNext7Days)} em 7 dias`}
+            />
+            <Kpi
+              label="Vencido"
+              value={money(rec.overdue.amount)}
+              hint={rec.overdue.count ? `${rec.overdue.count} parcelas` : 'Nada vencido'}
+              tone={rec.overdue.count ? 'danger' : undefined}
+            />
+            <Kpi
+              label="Recebido no período"
+              value={money(rec.received.amount)}
+              current={rec.received.amount}
+              previous={rec.previousReceived.amount}
+              hint={`${rec.received.count} recebimentos`}
+            />
+            <Kpi
+              label="A prazo sem documento"
+              value={String(rec.awaitingInvoice.count)}
+              hint={rec.awaitingInvoice.count ? `${money(rec.awaitingInvoice.amount)} sem parcelas` : 'Tudo com NF/VS'}
+            />
+          </div>
+          {lists.overdue && lists.overdue.length > 0 && (
+            <Section title="Vencidos" aside={`${lists.overdue.length}${lists.overdue.length >= 100 ? '+' : ''} parcelas · mais antigos primeiro`}>
+              {lists.overdue.map((t) => (
+                <Row
+                  key={t.id}
+                  onClick={() => onDetail({ kind: 'sale', id: t.saleId })}
+                  title={`${t.saleNumber} · ${t.client}`}
+                  subtitle={`Parcela ${t.installment}/${t.installments} · venceu ${date(t.dueDate)} · ${t.seller}`}
+                  value={money(t.balance)}
+                  badge={{ text: `${t.daysOverdue} ${t.daysOverdue === 1 ? 'dia' : 'dias'}`, tone: 'danger' }}
+                />
+              ))}
+            </Section>
+          )}
+        </>
+      )}
 
       <Section title="Últimos 12 meses">
         <div className="bars">

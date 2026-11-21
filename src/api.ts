@@ -116,6 +116,28 @@ export type Executive = {
     delivered: number;
     previousDelivered: number;
   };
+  /** Only while contas a receber is on in the API. */
+  receivables?: {
+    open: { count: number; amount: string };
+    overdue: { count: number; amount: string };
+    dueNext7Days: string;
+    awaitingInvoice: { count: number; amount: string };
+    received: { count: number; amount: string };
+    previousReceived: { count: number; amount: string };
+  };
+};
+
+export type OverdueTitle = {
+  id: number;
+  saleId: number;
+  saleNumber: string;
+  client: string;
+  seller: string;
+  installment: number;
+  installments: number;
+  dueDate: string | null;
+  balance: string;
+  daysOverdue: number;
 };
 
 export type MonitorLists = {
@@ -151,6 +173,7 @@ export type MonitorLists = {
     seller: string;
     amount: string;
   }[];
+  overdue?: OverdueTitle[];
 };
 
 export const executive = (period: PeriodKey) => call<Executive>('GET', `/executive?period=${period}`);
@@ -201,6 +224,17 @@ export type SaleDetail = DetailBase & {
   production: { status: string | null; sentAt: string | null; readyAt: string | null; deliveredAt: string | null; late: boolean };
   quotation: { id: number; number: string } | null;
   totals: { discount: string; freight: string; extras: string; total: string; weightKg: string | null };
+  receivables: {
+    id: number;
+    installment: number;
+    installments: number;
+    amount: string;
+    paid: string;
+    dueDate: string | null;
+    status: 'aberto' | 'parcial' | 'recebido';
+    settledOn: string | null;
+    overdue: boolean;
+  }[] | null;
 };
 
 export const quoteDetail = (id: number) => call<QuoteDetail>('GET', `/monitor/quotes/${id}`);

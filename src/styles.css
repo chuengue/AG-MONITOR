@@ -801,3 +801,9 @@ button.row {
   margin: 4px 0 0;
   white-space: pre-line;
 }
+
+/* Big money values in half-width cards (R$ 1.234.567,89 on a 360px phone). */
+.kpi-value {
+  font-size: clamp(17px, 5.4vw, 22px);
+  overflow-wrap: anywhere;
+}

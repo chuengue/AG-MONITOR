@@ -174,6 +174,7 @@ function SaleView({ s, onOpen }: { s: SaleDetail; onOpen: (t: DetailRef) => void
           <Step label="Entregue" at={p.deliveredAt} done={Boolean(p.deliveredAt)} />
         </div>
       )}
+      {s.receivables && s.receivables.length > 0 && <Installments list={s.receivables} />}
       <Items items={s.items} />
       <Totals
         lines={[
@@ -186,6 +187,38 @@ function SaleView({ s, onOpen }: { s: SaleDetail; onOpen: (t: DetailRef) => void
       />
       <Notes text={s.notes} />
     </>
+  );
+}
+
+function Installments({ list }: { list: NonNullable<SaleDetail['receivables']> }) {
+  return (
+    <div className="section flat">
+      <div className="section-head">
+        <h2>Parcelas</h2>
+        <span className="muted small">contas a receber</span>
+      </div>
+      {list.map((t) => (
+        <div key={t.id} className="item">
+          <div className="item-top">
+            <span className="item-desc">
+              {t.installment}/{t.installments} · {t.status === 'recebido' ? `recebida ${date(t.settledOn)}` : `vence ${date(t.dueDate)}`}
+            </span>
+            <span className="row-value">{money(t.amount)}</span>
+          </div>
+          <div className="row-sub">
+            {t.status === 'recebido' ? (
+              <span className="badge ok">Recebida</span>
+            ) : t.overdue ? (
+              <span className="badge danger">Vencida</span>
+            ) : t.status === 'parcial' ? (
+              <span className="badge neutral">Parcial · recebido {money(t.paid)}</span>
+            ) : (
+              <span className="badge info">Em aberto</span>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
 

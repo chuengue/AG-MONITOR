@@ -205,7 +205,7 @@ function Panel({ user, onLogout }: { user: User; onLogout: () => void }) {
           !error && <div className="skeleton-list">{[0, 1, 2, 3].map((i) => <div key={i} className="skeleton" />)}</div>
         ) : (
           <>
-            {tab === 'resumo' && <Summary data={exec} lists={lists} onOpen={chooseTab} />}
+            {tab === 'resumo' && <Summary data={exec} lists={lists} onOpen={chooseTab} onDetail={openDetail} />}
             {tab === 'pedidos' && <Orders data={exec} lists={lists} onOpen={openDetail} />}
             {tab === 'vendas' && <Sales data={exec} lists={lists} onOpen={openDetail} />}
             {tab === 'cotacoes' && <Quotes data={exec} lists={lists} onOpen={openDetail} />}
