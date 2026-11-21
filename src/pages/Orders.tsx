@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import type { Executive, MonitorLists } from '../api';
 import { date, money, PRODUCTION_STATUS } from '../format';
+import type { DetailRef } from './DetailSheet';
 import { Empty, Row, Section } from './ui';
 
 type Filter = 'todos' | 'atrasados' | 'em_producao' | 'pronto';
 
-export function Orders({ data, lists }: { data: Executive; lists: MonitorLists }) {
+export function Orders({ data, lists, onOpen }: { data: Executive; lists: MonitorLists; onOpen: (t: DetailRef) => void }) {
   const [filter, setFilter] = useState<Filter>('todos');
   const all = lists.production;
   const count = (f: Filter) =>
@@ -37,6 +38,7 @@ export function Orders({ data, lists }: { data: Executive; lists: MonitorLists }
           shown.map((o) => (
             <Row
               key={o.id}
+              onClick={() => onOpen({ kind: 'sale', id: o.id })}
               title={`${o.number} · ${o.client}`}
               subtitle={`${o.seller} · entrega ${date(o.deliveryDate)}`}
               value={money(o.amount)}

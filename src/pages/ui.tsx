@@ -53,15 +53,18 @@ export function Row({
   value,
   meta,
   badge,
+  onClick,
 }: {
+  onClick?: () => void;
   title: string;
   subtitle?: string;
   value?: string;
   meta?: string;
   badge?: { text: string; tone: 'danger' | 'ok' | 'info' | 'neutral' };
 }) {
+  const Tag = onClick ? 'button' : 'div';
   return (
-    <div className="row">
+    <Tag type={onClick ? 'button' : undefined} className={`row ${onClick ? 'tap' : ''}`} onClick={onClick}>
       <div className="row-main">
         <div className="row-title">{title}</div>
         {subtitle && <div className="row-sub">{subtitle}</div>}
@@ -70,7 +73,7 @@ export function Row({
         {value && <div className="row-value">{value}</div>}
         {badge ? <span className={`badge ${badge.tone}`}>{badge.text}</span> : meta && <div className="row-sub">{meta}</div>}
       </div>
-    </div>
+    </Tag>
   );
 }
 

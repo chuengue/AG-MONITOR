@@ -9,7 +9,8 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "deploy": "bash deploy/deploy.sh"
+    "deploy": "bash deploy/deploy.sh",
+    "sync:proposta": "node scripts/sync-proposal.mjs"
   },
   "dependencies": {
     "react": "^19.3.0",

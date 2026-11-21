@@ -12,6 +12,7 @@ import {
   type PeriodKey,
   type User,
 } from './api';
+import { DetailSheet, type DetailRef } from './pages/DetailSheet';
 import { Login } from './pages/Login';
 import { Orders } from './pages/Orders';
 import { Quotes } from './pages/Quotes';
@@ -87,7 +88,34 @@ function Panel({ user, onLogout }: { user: User; onLogout: () => void }) {
   const [error, setError] = useState('');
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
   const [menu, setMenu] = useState(false);
+  const [detail, setDetail] = useState<DetailRef | null>(null);
   const seq = useRef(0);
+
+  // The sheet is a history entry: the phone's back button closes it.
+  const sheetOpen = useRef(false);
+  useEffect(() => {
+    const onPop = () => {
+      sheetOpen.current = false;
+      setDetail(null);
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
+  // Quote → order inside the sheet swaps the content: still one entry.
+  const openDetail = useCallback((t: DetailRef) => {
+    if (!sheetOpen.current) {
+      history.pushState({ sheet: true }, '');
+      sheetOpen.current = true;
+    }
+    setDetail(t);
+  }, []);
+  const closeDetail = useCallback(() => {
+    if (history.state?.sheet) history.back();
+    else {
+      sheetOpen.current = false;
+      setDetail(null);
+    }
+  }, []);
 
   const load = useCallback(async (p: PeriodKey) => {
     const n = ++seq.current;
@@ -178,12 +206,14 @@ function Panel({ user, onLogout }: { user: User; onLogout: () => void }) {
         ) : (
           <>
             {tab === 'resumo' && <Summary data={exec} lists={lists} onOpen={chooseTab} />}
-            {tab === 'pedidos' && <Orders data={exec} lists={lists} />}
-            {tab === 'vendas' && <Sales data={exec} lists={lists} />}
-            {tab === 'cotacoes' && <Quotes data={exec} lists={lists} />}
+            {tab === 'pedidos' && <Orders data={exec} lists={lists} onOpen={openDetail} />}
+            {tab === 'vendas' && <Sales data={exec} lists={lists} onOpen={openDetail} />}
+            {tab === 'cotacoes' && <Quotes data={exec} lists={lists} onOpen={openDetail} />}
           </>
         )}
       </main>
+
+      {detail && <DetailSheet target={detail} onClose={closeDetail} onOpen={openDetail} />}
 
       <nav className="tabbar">
         {TABS.map((t) => (

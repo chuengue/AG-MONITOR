@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import type { Executive, MonitorLists } from '../api';
 import { date, money, QUOTE_STATUS } from '../format';
+import type { DetailRef } from './DetailSheet';
 import { Empty, Row, Section } from './ui';
 
 type Sort = 'recentes' | 'valor' | 'paradas';
 
-export function Quotes({ data, lists }: { data: Executive; lists: MonitorLists }) {
+export function Quotes({ data, lists, onOpen }: { data: Executive; lists: MonitorLists; onOpen: (t: DetailRef) => void }) {
   const [sort, setSort] = useState<Sort>('recentes');
   const quotes = [...lists.openQuotes].sort((a, b) =>
     sort === 'valor' ? Number(b.amount) - Number(a.amount) : sort === 'paradas' ? (b.daysOpen ?? 0) - (a.daysOpen ?? 0) : 0,
@@ -39,6 +40,7 @@ export function Quotes({ data, lists }: { data: Executive; lists: MonitorLists }
             return (
               <Row
                 key={q.id}
+                onClick={() => onOpen({ kind: 'quote', id: q.id })}
                 title={`${q.number} · ${q.client}`}
                 subtitle={`${q.seller} · ${QUOTE_STATUS[q.status] ?? q.status} · vale até ${date(q.validUntil)}`}
                 value={money(q.amount)}

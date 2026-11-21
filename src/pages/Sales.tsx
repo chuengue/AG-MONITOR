@@ -1,8 +1,9 @@
 import type { Executive, MonitorLists } from '../api';
 import { date, money, PRODUCTION_STATUS } from '../format';
+import type { DetailRef } from './DetailSheet';
 import { Empty, Row, Section } from './ui';
 
-export function Sales({ data, lists }: { data: Executive; lists: MonitorLists }) {
+export function Sales({ data, lists, onOpen }: { data: Executive; lists: MonitorLists; onOpen: (t: DetailRef) => void }) {
   const sellers = data.sellers.filter((s) => s.orders > 0 || s.quotationsIssued > 0);
   const max = Math.max(1, ...sellers.map((s) => Number(s.amount)));
   return (
@@ -48,6 +49,7 @@ export function Sales({ data, lists }: { data: Executive; lists: MonitorLists })
           lists.sales.map((s) => (
             <Row
               key={s.id}
+              onClick={() => onOpen({ kind: 'sale', id: s.id })}
               title={`${s.number} · ${s.client}`}
               subtitle={`${date(s.date)} · ${s.seller}`}
               value={money(s.amount)}

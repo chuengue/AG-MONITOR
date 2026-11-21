@@ -155,3 +155,54 @@ export type MonitorLists = {
 
 export const executive = (period: PeriodKey) => call<Executive>('GET', `/executive?period=${period}`);
 export const monitorLists = (period: PeriodKey) => call<MonitorLists>('GET', `/monitor?period=${period}`);
+
+/* ---------- quick view (modal) ---------- */
+
+export type DetailItem = {
+  seq: number;
+  description: string;
+  pieces: number;
+  saleUnit: string;
+  saleQuantity: string;
+  unitPrice: string | null;
+  net: string;
+  weightKg: string | null;
+  notes: string | null;
+  services: { name: string; value: string; included: boolean }[];
+};
+
+type DetailBase = {
+  id: number;
+  number: string;
+  status: string;
+  client: string;
+  clientCity: string | null;
+  seller: string;
+  paymentCondition: string | null;
+  deliveryType: 'retirada' | 'entrega';
+  deliveryTerm: string | null;
+  deliveryDate: string | null;
+  notes: string | null;
+  items: DetailItem[];
+};
+
+export type QuoteDetail = DetailBase & {
+  issueDate: string | null;
+  validUntil: string | null;
+  buyerName: string | null;
+  order: { id: number; number: string } | null;
+  totals: { materials: string; services: string; discount: string; freight: string; extras: string; total: string; weightKg: string | null };
+};
+
+export type SaleDetail = DetailBase & {
+  date: string | null;
+  paymentStatus: 'pendente' | 'confirmado' | null;
+  document: string | null;
+  production: { status: string | null; sentAt: string | null; readyAt: string | null; deliveredAt: string | null; late: boolean };
+  quotation: { id: number; number: string } | null;
+  totals: { discount: string; freight: string; extras: string; total: string; weightKg: string | null };
+};
+
+export const quoteDetail = (id: number) => call<QuoteDetail>('GET', `/monitor/quotes/${id}`);
+export const saleDetail = (id: number) => call<SaleDetail>('GET', `/monitor/sales/${id}`);
+export const quoteProposal = (id: number) => call<unknown>('GET', `/monitor/quotes/${id}/proposal`);
