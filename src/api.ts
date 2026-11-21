@@ -1,5 +1,5 @@
 // Calls to the ERP API (VITE_API_URL). Bearer token kept in localStorage: the
-// owner's own phone; the token expires on the server (JWT_EXPIRES_IN).
+// owner's own phone; the panel token lasts 30 days and only reads the panel.
 
 const BASE = (import.meta.env.VITE_API_URL as string).replace(/\/$/, '');
 const TOKEN_KEY = 'ag.painel.token';
@@ -67,7 +67,8 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
 }
 
 export async function login(username: string, password: string): Promise<User> {
-  const r = await call<{ token: string; user: User }>('POST', '/auth/login', { username, password });
+  // client "painel": token de 30 dias que só consulta o painel.
+  const r = await call<{ token: string; user: User }>('POST', '/auth/login', { username, password, client: 'painel' });
   if (!r.user.permissions.includes('painel.executivo')) {
     throw new ApiError(403, 'Seu usuário não tem acesso ao painel executivo.');
   }
