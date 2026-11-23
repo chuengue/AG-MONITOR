@@ -1,5 +1,5 @@
 // GERADO por scripts/sync-proposal.mjs a partir de AG-ELECTRON/src/main/proposal.ts
-// e src/shared/units.ts. Não edite aqui: mude lá e rode `npm run sync:proposta`.
+// e src/shared/units.ts + quoteNumber.ts. Não edite aqui: mude lá e rode `npm run sync:proposta`.
 /* eslint-disable */
 // Unit names shown to people (screens and PDFs): always the full name, in
 // capitals and singular ("350 QUILO", "10 PEÇA"). Prices keep the short form

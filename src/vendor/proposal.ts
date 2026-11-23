@@ -1,7 +1,8 @@
 // GERADO por scripts/sync-proposal.mjs a partir de AG-ELECTRON/src/main/proposal.ts
-// e src/shared/units.ts. Não edite aqui: mude lá e rode `npm run sync:proposta`.
+// e src/shared/units.ts + quoteNumber.ts. Não edite aqui: mude lá e rode `npm run sync:proposta`.
 /* eslint-disable */
 import { UNIT_NAMES, unitName } from './units';
+import { quoteNumber } from './quoteNumber';
 
 export type ProposalData = {
   company: {
@@ -15,6 +16,8 @@ export type ProposalData = {
   };
   quotation: {
     number: string;
+    /** Revision after the send ("Rev. N"); absent/0 = original. */
+    revision?: number;
     issueDate: string;
     validUntil: string;
     seller: string;
@@ -187,7 +190,7 @@ export function buildProposalHtml(p: ProposalData): string {
     `<tr class="${cls}"><td>${label}</td><td class="r">${value}</td></tr>`;
 
   return `<!doctype html>
-<html lang="pt-BR"><head><meta charset="utf-8"><title>${esc(q.number)}</title>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>${esc(quoteNumber(q.number, q.revision))}</title>
 <style>
   @page { size: A4; margin: 14mm 12mm; }
   * { box-sizing: border-box; }
@@ -231,7 +234,7 @@ export function buildProposalHtml(p: ProposalData): string {
     </div>
     <div class="doc">
       <h2>PROPOSTA COMERCIAL</h2>
-      <p><strong>Nº ${esc(q.number)}</strong></p>
+      <p><strong>Nº ${esc(quoteNumber(q.number, q.revision))}</strong></p>
       <p>Emissão: ${date(q.issueDate)}</p>
       <p>Validade: ${date(q.validUntil)}</p>
     </div>
