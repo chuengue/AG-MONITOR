@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type PointerEvent as RPointerEvent, type R
 import { quoteDetail, saleDetail, type DetailItem, type QuoteDetail, type SaleDetail } from '../api';
 import { date, kg, money, PRODUCTION_STATUS, QUOTE_STATUS } from '../format';
 import { printQuotation } from '../pdf';
+import { Attachments } from './Attachments';
 
 export type DetailRef = { kind: 'quote' | 'sale'; id: number };
 
@@ -175,6 +176,7 @@ function SaleView({ s, onOpen }: { s: SaleDetail; onOpen: (t: DetailRef) => void
         </div>
       )}
       {s.receivables && s.receivables.length > 0 && <Installments list={s.receivables} />}
+      <Attachments saleId={s.id} list={s.attachments ?? []} />
       <Items items={s.items} />
       <Totals
         lines={[

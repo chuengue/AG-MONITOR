@@ -42,6 +42,7 @@ export function Orders({ data, lists, onOpen }: { data: Executive; lists: Monito
               title={`${o.number} · ${o.client}`}
               subtitle={`${o.seller} · entrega ${date(o.deliveryDate)}`}
               value={money(o.amount)}
+              clip={o.attachments > 0}
               badge={
                 o.late
                   ? { text: 'Atrasado', tone: 'danger' }

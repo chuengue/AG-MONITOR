@@ -151,6 +151,8 @@ export type MonitorLists = {
     amount: string;
     weightKg: string | null;
     productionStatus: string | null;
+    /** Comprovantes anexados (clipe na lista). */
+    attachments: number;
   }[];
   openQuotes: {
     id: number;
@@ -172,6 +174,7 @@ export type MonitorLists = {
     client: string;
     seller: string;
     amount: string;
+    attachments: number;
   }[];
   overdue?: OverdueTitle[];
 };
@@ -217,12 +220,15 @@ export type QuoteDetail = DetailBase & {
   totals: { materials: string; services: string; discount: string; freight: string; extras: string; total: string; weightKg: string | null };
 };
 
+export type Attachment = { id: number; name: string; mime: string; size: number; createdAt: string; createdBy: string | null };
+
 export type SaleDetail = DetailBase & {
   date: string | null;
   paymentStatus: 'pendente' | 'confirmado' | null;
   document: string | null;
   production: { status: string | null; sentAt: string | null; readyAt: string | null; deliveredAt: string | null; late: boolean };
   quotation: { id: number; number: string } | null;
+  attachments: Attachment[];
   totals: { discount: string; freight: string; extras: string; total: string; weightKg: string | null };
   receivables: {
     id: number;
@@ -256,6 +262,27 @@ export const pushUnsubscribe = (endpoint: string) =>
 export const pushPreference = (event: string, on: boolean, endpoint: string | null) =>
   call<PushStatus>('PUT', `/monitor/push/preferences/${encodeURIComponent(event)}`, { on, endpoint });
 export const pushTest = () => call<{ devices: number; sent: number }>('POST', '/monitor/push/test');
+
+/** Arquivo do comprovante (com o token: não dá para abrir só pelo link). */
+export async function attachmentFile(saleId: number, attachmentId: number): Promise<Blob> {
+  let res: Response;
+  try {
+    res = await fetch(`${BASE}/monitor/sales/${saleId}/attachments/${attachmentId}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+  } catch {
+    throw new ApiError(0, 'Sem conexão com o servidor. Verifique a internet.');
+  }
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    if (res.status === 401 && token) {
+      logout();
+      onExpired();
+    }
+    throw new ApiError(res.status, data.error ?? `Erro ${res.status}`);
+  }
+  return res.blob();
+}
 
 export const quoteDetail = (id: number) => call<QuoteDetail>('GET', `/monitor/quotes/${id}`);
 export const saleDetail = (id: number) => call<SaleDetail>('GET', `/monitor/sales/${id}`);

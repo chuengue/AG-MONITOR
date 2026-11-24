@@ -53,6 +53,7 @@ export function Sales({ data, lists, onOpen }: { data: Executive; lists: Monitor
               title={`${s.number} · ${s.client}`}
               subtitle={`${date(s.date)} · ${s.seller}`}
               value={money(s.amount)}
+              clip={s.attachments > 0}
               meta={s.productionStatus ? PRODUCTION_STATUS[s.productionStatus] : 'Não enviado à produção'}
             />
           ))

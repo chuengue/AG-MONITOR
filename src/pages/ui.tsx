@@ -53,6 +53,7 @@ export function Row({
   value,
   meta,
   badge,
+  clip,
   onClick,
 }: {
   onClick?: () => void;
@@ -61,12 +62,21 @@ export function Row({
   value?: string;
   meta?: string;
   badge?: { text: string; tone: 'danger' | 'ok' | 'info' | 'neutral' };
+  /** Tem comprovante anexado. */
+  clip?: boolean;
 }) {
   const Tag = onClick ? 'button' : 'div';
   return (
     <Tag type={onClick ? 'button' : undefined} className={`row ${onClick ? 'tap' : ''}`} onClick={onClick}>
       <div className="row-main">
-        <div className="row-title">{title}</div>
+        <div className="row-title">
+          {clip && (
+            <svg className="clip" viewBox="0 0 24 24" role="img" aria-label="Tem comprovante">
+              <path d="M16.5 6v11.5a4 4 0 0 1-8 0V5a2.5 2.5 0 0 1 5 0v10.5a1 1 0 0 1-2 0V6H10v9.5a2.5 2.5 0 0 0 5 0V5a4 4 0 0 0-8 0v12.5a5.5 5.5 0 0 0 11 0V6z" />
+            </svg>
+          )}
+          {title}
+        </div>
         {subtitle && <div className="row-sub">{subtitle}</div>}
       </div>
       <div className="row-side">
