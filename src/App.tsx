@@ -14,10 +14,12 @@ import {
 } from './api';
 import { DetailSheet, type DetailRef } from './pages/DetailSheet';
 import { Login } from './pages/Login';
+import { NotificationsSheet } from './pages/NotificationsSheet';
 import { Orders } from './pages/Orders';
 import { Quotes } from './pages/Quotes';
 import { Sales } from './pages/Sales';
 import { Summary } from './pages/Summary';
+import { disable as disablePush } from './push';
 
 const REFRESH_MS = 5 * 60 * 1000;
 const PERIODS: { key: PeriodKey; label: string }[] = [
@@ -71,12 +73,20 @@ export function App() {
   return (
     <Panel
       user={user}
-      onLogout={() => {
+      onLogout={async () => {
+        // Saiu: este celular para de receber os avisos desse usuário.
+        await disablePush().catch(() => {});
         logout();
         setUser(null);
       }}
     />
   );
+}
+
+/** "?abrir=sale-12" (notificação tocada com o painel fechado). */
+function linkTarget(): DetailRef | null {
+  const m = /^(sale|quote)-(\d+)$/.exec(new URLSearchParams(location.search).get('abrir') ?? '');
+  return m ? { kind: m[1] as DetailRef['kind'], id: Number(m[2]) } : null;
 }
 
 function Panel({ user, onLogout }: { user: User; onLogout: () => void }) {
@@ -89,6 +99,7 @@ function Panel({ user, onLogout }: { user: User; onLogout: () => void }) {
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
   const [menu, setMenu] = useState(false);
   const [detail, setDetail] = useState<DetailRef | null>(null);
+  const [notifications, setNotifications] = useState(false);
   const seq = useRef(0);
 
   // The sheet is a history entry: the phone's back button closes it.
@@ -116,6 +127,22 @@ function Panel({ user, onLogout }: { user: User; onLogout: () => void }) {
       setDetail(null);
     }
   }, []);
+
+  // Notificação tocada: abre o pedido/cotação. Painel fechado → ?abrir=;
+  // painel aberto → mensagem do service worker.
+  useEffect(() => {
+    const target = linkTarget();
+    if (target) {
+      history.replaceState(history.state, '', location.pathname);
+      openDetail(target);
+    }
+    const onMessage = (e: MessageEvent) => {
+      const open = e.data?.type === 'ag-abrir' ? e.data.open : null;
+      if (open && (open.kind === 'sale' || open.kind === 'quote') && Number.isInteger(open.id)) openDetail(open);
+    };
+    navigator.serviceWorker?.addEventListener('message', onMessage);
+    return () => navigator.serviceWorker?.removeEventListener('message', onMessage);
+  }, [openDetail]);
 
   const load = useCallback(async (p: PeriodKey) => {
     const n = ++seq.current;
@@ -180,6 +207,9 @@ function Panel({ user, onLogout }: { user: User; onLogout: () => void }) {
             {menu && (
               <div className="menu" onClick={() => setMenu(false)}>
                 <div className="menu-name">{user.name}</div>
+                <button className="plain" onClick={() => setNotifications(true)}>
+                  Notificações
+                </button>
                 <button onClick={onLogout}>Sair</button>
               </div>
             )}
@@ -214,6 +244,7 @@ function Panel({ user, onLogout }: { user: User; onLogout: () => void }) {
       </main>
 
       {detail && <DetailSheet target={detail} onClose={closeDetail} onOpen={openDetail} />}
+      {notifications && <NotificationsSheet onClose={() => setNotifications(false)} />}
 
       <nav className="tabbar">
         {TABS.map((t) => (

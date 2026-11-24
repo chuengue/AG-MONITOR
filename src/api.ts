@@ -237,6 +237,26 @@ export type SaleDetail = DetailBase & {
   }[] | null;
 };
 
+/* ---------- notificações (Web Push) ---------- */
+
+export type PushStatus = {
+  /** null = notificações desligadas no servidor. */
+  publicKey: string | null;
+  devices: number;
+  thisDevice: boolean;
+  events: { key: string; label: string; description: string; on: boolean }[];
+};
+
+const q = (endpoint: string | null) => (endpoint ? `?endpoint=${encodeURIComponent(endpoint)}` : '');
+export const pushStatus = (endpoint: string | null) => call<PushStatus>('GET', `/monitor/push${q(endpoint)}`);
+export const pushSubscribe = (subscription: PushSubscriptionJSON, device: string) =>
+  call<PushStatus>('POST', '/monitor/push/subscriptions', { ...subscription, device });
+export const pushUnsubscribe = (endpoint: string) =>
+  call<PushStatus>('DELETE', '/monitor/push/subscriptions', { endpoint });
+export const pushPreference = (event: string, on: boolean, endpoint: string | null) =>
+  call<PushStatus>('PUT', `/monitor/push/preferences/${encodeURIComponent(event)}`, { on, endpoint });
+export const pushTest = () => call<{ devices: number; sent: number }>('POST', '/monitor/push/test');
+
 export const quoteDetail = (id: number) => call<QuoteDetail>('GET', `/monitor/quotes/${id}`);
 export const saleDetail = (id: number) => call<SaleDetail>('GET', `/monitor/sales/${id}`);
 export const quoteProposal = (id: number) => call<unknown>('GET', `/monitor/quotes/${id}/proposal`);
