@@ -7,6 +7,11 @@ const USER_KEY = 'ag.painel.usuario';
 
 export type User = { id: number; name: string; username: string; permissions: string[] };
 
+/** Painel completo (dono/gestão). */
+export const isExecutive = (u: User) => u.permissions.includes('painel.executivo');
+/** Entra no painel: completo ou só a conferência (conferente). */
+export const panelAccess = (u: User) => isExecutive(u) || u.permissions.includes('painel.conferencia');
+
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -69,8 +74,8 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
 export async function login(username: string, password: string): Promise<User> {
   // client "painel": token de 30 dias que só consulta o painel.
   const r = await call<{ token: string; user: User }>('POST', '/auth/login', { username, password, client: 'painel' });
-  if (!r.user.permissions.includes('painel.executivo')) {
-    throw new ApiError(403, 'Seu usuário não tem acesso ao painel executivo.');
+  if (!panelAccess(r.user)) {
+    throw new ApiError(403, 'Seu usuário não tem acesso ao painel.');
   }
   token = r.token;
   write(TOKEN_KEY, r.token);
@@ -287,3 +292,20 @@ export async function attachmentFile(saleId: number, attachmentId: number): Prom
 export const quoteDetail = (id: number) => call<QuoteDetail>('GET', `/monitor/quotes/${id}`);
 export const saleDetail = (id: number) => call<SaleDetail>('GET', `/monitor/sales/${id}`);
 export const quoteProposal = (id: number) => call<unknown>('GET', `/monitor/quotes/${id}/proposal`);
+
+// Conferência (conferente): número, vendedor, lançado por e pagamento.
+export type ConferencePeriod = 'hoje' | 'semana' | 'mes';
+export type ConferencePayment = 'aguardando' | 'pago' | 'faturamento_aprovado' | 'cancelado';
+export type ConferenceItem = {
+  id: number;
+  number: string;
+  date: string | null;
+  seller: string;
+  launchedBy: string | null;
+  payment: ConferencePayment;
+};
+export const conference = (period: ConferencePeriod, q: string) =>
+  call<{ period: ConferencePeriod | null; search: string | null; items: ConferenceItem[] }>(
+    'GET',
+    `/monitor/conference?${q ? `q=${encodeURIComponent(q)}` : `period=${period}`}`,
+  );
