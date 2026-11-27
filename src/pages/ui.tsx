@@ -53,6 +53,7 @@ export function Row({
   value,
   meta,
   badge,
+  badge2,
   clip,
   onClick,
 }: {
@@ -62,6 +63,8 @@ export function Row({
   value?: string;
   meta?: string;
   badge?: { text: string; tone: 'danger' | 'ok' | 'info' | 'neutral' };
+  /** Segunda etiqueta, abaixo da primeira. */
+  badge2?: { text: string; tone: 'danger' | 'ok' | 'info' | 'neutral' };
   /** Tem comprovante anexado. */
   clip?: boolean;
 }) {
@@ -82,6 +85,7 @@ export function Row({
       <div className="row-side">
         {value && <div className="row-value">{value}</div>}
         {badge ? <span className={`badge ${badge.tone}`}>{badge.text}</span> : meta && <div className="row-sub">{meta}</div>}
+        {badge2 && <span className={`badge ${badge2.tone}`}>{badge2.text}</span>}
       </div>
     </Tag>
   );

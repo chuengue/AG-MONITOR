@@ -1,31 +1,63 @@
 // Conferência (2026-11-26): o conferente confere se o pedido está pago antes de
 // liberar o material. Busca pelo número em destaque; sem a busca, os pedidos do
 // período. Só número, vendedor, lançado por e situação do pagamento.
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { ApiError, conference, type ConferenceItem, type ConferencePayment, type ConferencePeriod } from '../api';
-import { date } from '../format';
-import { Empty, Row, Section } from './ui';
+// 2026-11-27: também a situação da produção (etiqueta + filtro).
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  ApiError,
+  conference,
+  type ConferenceItem,
+  type ConferencePayment,
+  type ConferencePeriod,
+  type ConferenceProduction,
+} from "../api";
+import { date } from "../format";
+import { Empty, Row, Section } from "./ui";
 
 const REFRESH_MS = 5 * 60 * 1000;
 const PERIODS: { key: ConferencePeriod; label: string }[] = [
-  { key: 'hoje', label: 'Hoje' },
-  { key: 'semana', label: 'Semana' },
-  { key: 'mes', label: 'Mês' },
+  { key: "hoje", label: "Hoje" },
+  { key: "semana", label: "Semana" },
+  { key: "mes", label: "Mês" },
 ];
-const PAYMENT: Record<ConferencePayment, { text: string; tone: 'danger' | 'ok' | 'neutral' }> = {
-  aguardando: { text: 'Aguardando pagamento', tone: 'neutral' },
-  pago: { text: 'Pago', tone: 'ok' },
-  faturamento_aprovado: { text: 'Faturamento aprovado', tone: 'ok' },
-  cancelado: { text: 'Cancelado', tone: 'danger' },
+const PAYMENT: Record<
+  ConferencePayment,
+  { text: string; tone: "danger" | "ok" | "neutral" }
+> = {
+  aguardando: { text: "Aguardando pagamento", tone: "neutral" },
+  pago: { text: "Pago", tone: "ok" },
+  faturamento_aprovado: { text: "Faturamento aprovado", tone: "ok" },
+  cancelado: { text: "Cancelado", tone: "danger" },
+};
+const PRODUCTION_FILTERS: {
+  key: ConferenceProduction | null;
+  label: string;
+}[] = [
+  { key: null, label: "Todos" },
+  { key: "em_producao", label: "Em produção" },
+  { key: "pronto", label: "Pronto" },
+  { key: "entregue", label: "Entregue" },
+];
+const PRODUCTION: Record<
+  ConferenceProduction | "nao_enviado",
+  { text: string; tone: "info" | "ok" | "neutral" }
+> = {
+  nao_enviado: { text: "Não enviado para produção", tone: "neutral" },
+  em_producao: { text: "Em produção", tone: "info" },
+  pronto: { text: "Pronto", tone: "ok" },
+  entregue: { text: "Entregue", tone: "ok" },
 };
 
 export function Conference() {
-  const [period, setPeriod] = useState<ConferencePeriod>('hoje');
-  const [search, setSearch] = useState('');
-  const [query, setQuery] = useState(''); // busca com atraso (enquanto digita)
+  const [period, setPeriod] = useState<ConferencePeriod>("hoje");
+  const [production, setProduction] = useState<ConferenceProduction | null>(
+    null,
+  );
+  const [search, setSearch] = useState("");
+  const [query, setQuery] = useState(""); // busca com atraso (enquanto digita)
   const [items, setItems] = useState<ConferenceItem[] | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
   const seq = useRef(0);
 
@@ -34,40 +66,49 @@ export function Conference() {
     return () => clearTimeout(t);
   }, [search]);
 
-  const load = useCallback(async (p: ConferencePeriod, q: string) => {
-    const n = ++seq.current;
-    setLoading(true);
-    setError('');
-    try {
-      const r = await conference(p, q);
-      if (n !== seq.current) return;
-      setItems(r.items);
-      setUpdatedAt(new Date());
-    } catch (err) {
-      if (n !== seq.current) return;
-      if (err instanceof ApiError && err.status === 401) return;
-      setError(err instanceof Error ? err.message : 'Erro ao carregar.');
-    } finally {
-      if (n === seq.current) setLoading(false);
-    }
-  }, []);
+  const load = useCallback(
+    async (
+      p: ConferencePeriod,
+      q: string,
+      prod: ConferenceProduction | null,
+    ) => {
+      const n = ++seq.current;
+      setLoading(true);
+      setError("");
+      try {
+        const r = await conference(p, q, prod);
+        if (n !== seq.current) return;
+        setItems(r.items);
+        setUpdatedAt(new Date());
+      } catch (err) {
+        if (n !== seq.current) return;
+        if (err instanceof ApiError && err.status === 401) return;
+        setError(err instanceof Error ? err.message : "Erro ao carregar.");
+      } finally {
+        if (n === seq.current) setLoading(false);
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
-    load(period, query);
+    load(period, query, production);
     const timer = setInterval(() => {
-      if (document.visibilityState === 'visible') load(period, query);
+      if (document.visibilityState === "visible")
+        load(period, query, production);
     }, REFRESH_MS);
     const onVisible = () => {
-      if (document.visibilityState === 'visible') load(period, query);
+      if (document.visibilityState === "visible")
+        load(period, query, production);
     };
-    document.addEventListener('visibilitychange', onVisible);
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
       clearInterval(timer);
-      document.removeEventListener('visibilitychange', onVisible);
+      document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [period, query, load]);
+  }, [period, query, production, load]);
 
-  const searching = query !== '';
+  const searching = query !== "";
 
   return (
     <>
@@ -78,7 +119,7 @@ export function Conference() {
           e.preventDefault();
           (document.activeElement as HTMLElement | null)?.blur();
           const q = search.trim();
-          if (q === query) load(period, q);
+          if (q === query) load(period, q, production);
           else setQuery(q);
         }}
       >
@@ -95,7 +136,12 @@ export function Conference() {
           onChange={(e) => setSearch(e.target.value)}
         />
         {search && (
-          <button type="button" className="search-clear" aria-label="Limpar busca" onClick={() => setSearch('')}>
+          <button
+            type="button"
+            className="search-clear"
+            aria-label="Limpar busca"
+            onClick={() => setSearch("")}
+          >
             ×
           </button>
         )}
@@ -104,8 +150,25 @@ export function Conference() {
       {!searching && (
         <div className="chips">
           {PERIODS.map((p) => (
-            <button key={p.key} className={`chip ${period === p.key ? 'on' : ''}`} onClick={() => setPeriod(p.key)}>
+            <button
+              key={p.key}
+              className={`chip ${period === p.key ? "on" : ""}`}
+              onClick={() => setPeriod(p.key)}
+            >
               {p.label}
+            </button>
+          ))}
+        </div>
+      )}
+      {!searching && (
+        <div className="chips" aria-label="Produção">
+          {PRODUCTION_FILTERS.map((f) => (
+            <button
+              key={f.label}
+              className={`chip ${production === f.key ? "on" : ""}`}
+              onClick={() => setProduction(f.key)}
+            >
+              {f.label}
             </button>
           ))}
         </div>
@@ -114,7 +177,9 @@ export function Conference() {
       {error && (
         <div className="alert">
           {error}
-          <button onClick={() => load(period, query)}>Tentar de novo</button>
+          <button onClick={() => load(period, query, production)}>
+            Tentar de novo
+          </button>
         </div>
       )}
 
@@ -128,14 +193,18 @@ export function Conference() {
         )
       ) : (
         <Section
-          title={searching ? `Busca: ${query}` : 'Pedidos'}
+          title={searching ? `Busca: ${query}` : "Pedidos"}
           aside={
-            <button className="link-btn" onClick={() => load(period, query)} disabled={loading}>
+            <button
+              className="link-btn"
+              onClick={() => load(period, query, production)}
+              disabled={loading}
+            >
               {loading
-                ? 'Atualizando…'
+                ? "Atualizando…"
                 : updatedAt
-                  ? `Atualizado às ${updatedAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
-                  : 'Atualizar'}
+                  ? `Atualizado às ${updatedAt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`
+                  : "Atualizar"}
             </button>
           }
         >
@@ -144,14 +213,27 @@ export function Conference() {
               <Row
                 key={o.id}
                 title={o.number}
-                subtitle={[`Vendedor: ${o.seller}`, o.launchedBy && `Lançado por: ${o.launchedBy}`, date(o.date)]
+                subtitle={[
+                  `Vendedor: ${o.seller}`,
+                  o.launchedBy && `Lançado por: ${o.launchedBy}`,
+                  date(o.date),
+                ]
                   .filter(Boolean)
-                  .join(' · ')}
+                  .join(" · ")}
                 badge={PAYMENT[o.payment]}
+                badge2={PRODUCTION[o.production ?? "nao_enviado"]}
               />
             ))
           ) : (
-            <Empty text={searching ? 'Nenhum pedido com esse número.' : 'Nenhum pedido no período.'} />
+            <Empty
+              text={
+                searching
+                  ? "Nenhum pedido com esse número."
+                  : production
+                    ? "Nenhum pedido nessa situação no período."
+                    : "Nenhum pedido no período."
+              }
+            />
           )}
         </Section>
       )}

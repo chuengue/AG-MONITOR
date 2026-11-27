@@ -303,9 +303,14 @@ export type ConferenceItem = {
   seller: string;
   launchedBy: string | null;
   payment: ConferencePayment;
+  /** null = ainda não enviado para a produção. */
+  production: ConferenceProduction | null;
 };
-export const conference = (period: ConferencePeriod, q: string) =>
+export type ConferenceProduction = 'em_producao' | 'pronto' | 'entregue';
+export const conference = (period: ConferencePeriod, q: string, production: ConferenceProduction | null = null) =>
   call<{ period: ConferencePeriod | null; search: string | null; items: ConferenceItem[] }>(
     'GET',
-    `/monitor/conference?${q ? `q=${encodeURIComponent(q)}` : `period=${period}`}`,
+    `/monitor/conference?${
+      q ? `q=${encodeURIComponent(q)}` : `period=${period}${production ? `&production=${production}` : ''}`
+    }`,
   );
